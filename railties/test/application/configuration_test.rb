@@ -291,6 +291,26 @@ module ApplicationTests
       assert_instance_of Pathname, Rails.public_path
     end
 
+    test "config.reload is !config.cache_classes" do
+      app "development"
+
+      config = Rails.application.config
+
+      assert_equal !config.cache_classes, config.reload
+
+      [true, false].each do |enabled|
+        config.reload = enabled
+        assert_equal enabled, config.reload
+        assert_equal enabled, !config.cache_classes
+      end
+
+      [true, false].each do |enabled|
+        config.cache_classes = enabled
+        assert_equal enabled, !config.reload
+        assert_equal enabled, config.cache_classes
+      end
+    end
+
     test "does not eager load controllers state actions in development" do
       app_file "app/controllers/posts_controller.rb", <<-RUBY
         class PostsController < ActionController::Base
@@ -314,8 +334,8 @@ module ApplicationTests
       RUBY
 
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       app "production"
@@ -344,8 +364,8 @@ module ApplicationTests
       RUBY
 
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       app "production"
@@ -391,8 +411,8 @@ module ApplicationTests
       RUBY
 
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       app "production"
@@ -417,8 +437,8 @@ module ApplicationTests
       RUBY
 
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       app_file "config/initializers/schema_cache.rb", <<-RUBY
@@ -447,8 +467,8 @@ module ApplicationTests
       RUBY
 
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       app_file "app/models/comment.rb", <<-RUBY
@@ -473,8 +493,8 @@ module ApplicationTests
       FileUtils.rm_rf("#{app_path}/app/mailers/application_mailer.rb")
       FileUtils.rm_rf("#{app_path}/config/environments")
       add_to_config <<-RUBY
+        config.reload = false
         config.eager_load = true
-        config.cache_classes = true
       RUBY
 
       use_frameworks []
@@ -1265,8 +1285,8 @@ module ApplicationTests
       assert_equal Rails::Autoloaders::Inflector, Rails.autoloaders.once.inflector
     end
 
-    test "config.action_view.cache_template_loading with cache_classes default" do
-      add_to_config "config.cache_classes = true"
+    test "config.action_view.cache_template_loading with config.reload default" do
+      add_to_config "config.reload = false"
 
       app "development"
       require "action_view/base"
@@ -1274,8 +1294,8 @@ module ApplicationTests
       assert_equal true, ActionView::Resolver.caching?
     end
 
-    test "config.action_view.cache_template_loading without cache_classes default" do
-      add_to_config "config.cache_classes = false"
+    test "config.action_view.cache_template_loading without config.reload default" do
+      add_to_config "config.reload = true"
 
       app "development"
       require "action_view/base"
@@ -1285,7 +1305,7 @@ module ApplicationTests
 
     test "config.action_view.cache_template_loading = false" do
       add_to_config <<-RUBY
-        config.cache_classes = true
+        config.reload = false
         config.action_view.cache_template_loading = false
       RUBY
 
@@ -1297,7 +1317,7 @@ module ApplicationTests
 
     test "config.action_view.cache_template_loading = true" do
       add_to_config <<-RUBY
-        config.cache_classes = false
+        config.reload = true
         config.action_view.cache_template_loading = true
       RUBY
 
@@ -1307,9 +1327,9 @@ module ApplicationTests
       assert_equal true, ActionView::Resolver.caching?
     end
 
-    test "config.action_view.cache_template_loading with cache_classes in an environment" do
+    test "config.action_view.cache_template_loading with config.reload in an environment" do
       build_app(initializers: true)
-      add_to_env_config "development", "config.cache_classes = false"
+      add_to_env_config "development", "config.reload = true"
 
       # These requires are to emulate an engine loading Action View before the application
       require "action_view"

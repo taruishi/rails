@@ -285,6 +285,14 @@ module Rails
         @loaded_config_version = target_version
       end
 
+      def reload
+        !cache_classes
+      end
+
+      def reload=(value)
+        self.cache_classes = !value
+      end
+
       def encoding=(value)
         @encoding = value
         silence_warnings do
